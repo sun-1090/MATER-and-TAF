@@ -47,18 +47,17 @@ def parse_metar(m, name):
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "airport": name,
         "icao": m.get("station"),
-        "temperature_c": m.get("temperature"),
-        "dewpoint_c": m.get("dewpoint"),
-        "wind_dir_deg": wind,
-        "wind_speed_kt": wind_spd,
-        "wind_gust_kt": gust,
-        "visibility_m": m.get("visibility"),
-        "pressure_hpa": m.get("altimeter"),
+        "temperature_c": m.get("temperature", {}).get("value"),
+        "dewpoint_c": m.get("dewpoint", {}).get("value"),
+        "wind_dir_deg": m.get("wind_direction", {}).get("value"),
+        "wind_speed_kt": m.get("wind_speed", {}).get("value"),
+        "wind_gust_kt": m.get("wind_gust", {}).get("value"),
+        "visibility_m": m.get("visibility", {}).get("value"),
+        "pressure_hpa": m.get("altimeter", {}).get("value"),
         "weather": " ".join(m.get("wx_codes", [])),
         "clouds": " ".join(f"{c['type']}{c.get('altitude','')}" for c in m.get("clouds", [])),
-        "raw": raw
+        "raw": m.get("raw", "")
     }
-
 # =========================
 # CSV 書き込み
 # =========================
