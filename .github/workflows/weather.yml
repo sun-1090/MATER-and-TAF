@@ -30,7 +30,9 @@ jobs:
           python-version: '3.10'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run weather script
         run: python main.py
@@ -42,24 +44,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Detached HEAD 対策
+          # Detached HEAD 対策（超重要）
           git checkout ${{ github.ref_name }}
 
-          # リモートの最新取り込み（初回 push でも exit 128 回避）
+          # リモートの最新を取り込む（失敗しても続行）
           git pull --rebase origin ${{ github.ref_name }} || true
 
-          # CSV ファイルがあれば add
-          files=$(ls metar_*.csv taf_*.csv 2>/dev/null || true)
-          if [ -n "$files" ]; then
-            git add $files
+          # data配下をまとめて add（空港別CSV対応）
+          git add data
 
-            if git diff --staged --quiet; then
-              echo "No changes to commit."
-              exit 0
-            fi
-
-            git commit -m "Update weather data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-            git push origin ${{ github.ref_name }} --set-upstream || git push origin ${{ github.ref_name }}
-          else
-            echo "No CSV files to commit."
+          # 変更がなければ終了
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            exit 0
           fi
+
+          git commit -m "Update weather data $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          git push origin ${{ github.ref_name }}
