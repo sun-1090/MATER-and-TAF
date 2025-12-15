@@ -1,7 +1,7 @@
 import requests
 import csv
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 # =========================
 # 空港
@@ -21,8 +21,7 @@ HEADERS = {}
 if TOKEN:
     HEADERS["Authorization"] = f"token {TOKEN}"
 
-JST = timezone(timedelta(hours=9))
-TODAY = datetime.now(JST).strftime("%Y-%m-%d")
+TODAY = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 # =========================
 # utils
@@ -42,14 +41,22 @@ def fetch(endpoint):
     return r.json()
 
 # =========================
-# METAR
+# METAR解析
 # =========================
 def get_metar(icao):
     return fetch(f"{AVWX_BASE}/metar/{icao}")
 
 def parse_metar(m, name):
+<<<<<<< HEAD
+=======
+    def val(d):
+        if isinstance(d, dict):
+            return d.get("value")
+        return d
+
+>>>>>>> 84fe96219d4f09f8f43d306fd531a4fc29318807
     return {
-        "timestamp": datetime.now(JST).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "airport": name,
         "icao": m.get("station"),
         "temperature_c": val(m.get("temperature")),
@@ -60,16 +67,21 @@ def parse_metar(m, name):
         "visibility_m": val(m.get("visibility")),
         "pressure_hpa": val(m.get("altimeter")),
         "weather": " ".join(m.get("wx_codes", [])),
+<<<<<<< HEAD
         "clouds": " ".join(
             f"{c['type']}{c.get('altitude','')}"
             for c in m.get("clouds", [])
         ),
+=======
+        "clouds": " ".join(f"{c['type']}{c.get('altitude','')}" for c in m.get("clouds", [])),
+>>>>>>> 84fe96219d4f09f8f43d306fd531a4fc29318807
         "raw": m.get("raw", "")
     }
 
 # =========================
-# TAF
+# CSV書き込み
 # =========================
+<<<<<<< HEAD
 def get_taf(icao):
     return fetch(f"{AVWX_BASE}/taf/{icao}")
 
@@ -133,6 +145,14 @@ def write_csv(path, rows, fields):
     write_header = not os.path.exists(path)
     with open(path, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
+=======
+def write_csv(filename, rows):
+    if not rows:
+        return
+    write_header = not os.path.exists(filename)
+    with open(filename, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+>>>>>>> 84fe96219d4f09f8f43d306fd531a4fc29318807
         if write_header:
             writer.writeheader()
         writer.writerows(rows)
@@ -141,6 +161,11 @@ def write_csv(path, rows, fields):
 # main
 # =========================
 def main():
+<<<<<<< HEAD
+=======
+    metar_rows = []
+
+>>>>>>> 84fe96219d4f09f8f43d306fd531a4fc29318807
     for name, icao in AIRPORTS.items():
         base = f"data/{name}"
         ensure_dir(base)
@@ -157,6 +182,7 @@ def main():
         except Exception as e:
             print("METAR error:", icao, e)
 
+<<<<<<< HEAD
         # TAF
         try:
             taf = get_taf(icao)
@@ -170,6 +196,9 @@ def main():
         except Exception as e:
             print("TAF error:", icao, e)
 
+=======
+    write_csv(f"metar_{TODAY}.csv", metar_rows)
+>>>>>>> 84fe96219d4f09f8f43d306fd531a4fc29318807
     print("done")
 
 if __name__ == "__main__":
