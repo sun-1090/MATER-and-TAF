@@ -1,0 +1,2 @@
+timestamp,airport,icao,temperature_c,dewpoint_c,wind_dir_deg,wind_speed_kt,wind_gust_kt,visibility_m,pressure_hpa,weather,clouds,raw
+2025-12-17T00:44:12.403037+09:00,DLC,ZYTL,-2,-7,340,4,,9999,1027,,,ZYTL 161530Z 34004MPS 310V020 CAVOK M02/M07 Q1027 NOSIG
