@@ -1,0 +1,2 @@
+timestamp,airport,icao,temperature_c,dewpoint_c,wind_dir_deg,wind_speed_kt,wind_gust_kt,visibility_m,pressure_hpa,weather,clouds,raw
+2025-12-18T00:47:44.415266+09:00,HND,RJTT,11,1,330,14,,9999,1015,,,RJTT 171530Z 33014KT CAVOK 11/01 Q1015 NOSIG RMK A2998
