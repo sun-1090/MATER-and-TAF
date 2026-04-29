@@ -79,25 +79,28 @@ def get_taf(icao):
 
 def expand_taf_hourly(station_name, taf):
     """予報期間を1時間ごとの行に展開する"""
-    if not taf or "valid_name" not in taf:
-        print(f"warling!:{station_name}のなかにvalid_nameがありません！")
+    if not taf or "start_time" not in taf or "end_time" not in taf:
+        print(f"warning!:{station_name}のなかにvalid_nameがありません！")
         return []
-    start = datetime.fromisoformat(taf["valid_time"]["from"])
-    end = datetime.fromisoformat(taf["valid_time"]["to"])
-
+    try:
+        start = datetime.fromisoformat(taf["valid_time"]["from"])
+        end = datetime.fromisoformat(taf["valid_time"]["to"])
+    except (KeyError, TypeError, ValueError) as e:
+        print(f"Error Parsing time for {station_name}: {e}")
+        return[]
+    
     rows = []
     t = start.replace(minute=0, second=0, microsecond=0)
 
     while t <= end:
-        for e in taf["forecast"]:
-            e_start = datetime.fromisoformat(e["time"]["from"])
-            e_end = datetime.fromisoformat(e["time"].get("to", end.isoformat()))
+        for e in taf.get("forecast", []):
+            e_start = datetime.fromisoformat(e_start_str.replace("Z", "00:00"))
+            e_end = datetime.fromisoformat(e_end_str.replace("Z", "00:00")) if e_end_str else end
 
             if e_start <= t <= e_end:
                 rows.append(make_taf_row(station_name, t, e))
-
+                break
         t += timedelta(hours=1)
-
     return rows
 
 def make_taf_row(station_name, t, e):
