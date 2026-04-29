@@ -155,7 +155,8 @@ def main():
         ensure_dir(base)
 
         # --- METARの処理 ---
-        try:            m = get_metar(icao)
+        try:
+            m = get_metar(icao)
             row = parse_metar(m, name)
             write_csv(
                 f"{base}/metar_{TODAY}.csv",
