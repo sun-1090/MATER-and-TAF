@@ -155,8 +155,7 @@ def main():
         ensure_dir(base)
 
         # --- METARの処理 ---
-        try:
-            m = get_metar(icao)
+        try:            m = get_metar(icao)
             row = parse_metar(m, name)
             write_csv(
                 f"{base}/metar_{TODAY}.csv",
@@ -169,8 +168,6 @@ def main():
 
         # --- TAFの処理 ---
         try:
-            taf = get_metar(icao) # 注意：APIのエンドポイントに合わせて修正が必要な場合はここを確認
-            # 正しくは get_taf(icao)
             taf_data = get_taf(icao)
             rows = expand_taf_hourly(name, taf_data)
             if rows:
