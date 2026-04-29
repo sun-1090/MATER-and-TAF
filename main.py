@@ -32,6 +32,19 @@ def val(x):
         return x.get("value")
     return x
 
+def safe_join_wx(wx_list):
+    """天気コードのリストを安全に文字列に変換する"""
+    if not wx_list:
+        return ""
+    res = []
+    for item in wx_list:
+        if isinstance(item, dict):
+            # 辞書の場合は 'repr' や 'value' を取得、なければ空文字
+            res.append(item.get("repr", item.get("value", "")))
+        else:
+            res.append(str(item))
+    return " ".join(filter(None, res))
+
 def ensure_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -42,7 +55,6 @@ def fetch(endpoint):
     return r.json()
 
 def parse_iso(iso_str):
-    """ISO 8601文字列をdatetimeに変換。Zを+00:00に置換して安定化。"""
     if not iso_str:
         return None
     return datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
@@ -65,7 +77,7 @@ def parse_metar(m, name):
         "最大瞬間風速(kt)": val(m.get("wind_gust")),
         "視程(m)": val(m.get("visibility")),
         "気圧(hPa)": val(m.get("altimeter")),
-        "現在天気": " ".join(m.get("wx_codes", []) if m.get("wx_codes") else []),
+        "現在天気": safe_join_wx(m.get("wx_codes")),
         "雲の状態": " ".join(f"{c['type']}{c.get('altitude','')}" for c in m.get("clouds", [])) if m.get("clouds") else "",
         "原文": m.get("raw", "")
     }
@@ -77,18 +89,13 @@ def get_taf(icao):
     return fetch(f"{AVWX_BASE}/taf/{icao}")
 
 def expand_taf_hourly(station_name, taf):
-    """予報を1時間刻みに展開"""
-    # エラーの元: 使うキー(start_time/end_time)をしっかり指定
     if not taf or "start_time" not in taf or "end_time" not in taf:
-        print(f"Warning: {station_name} のデータに有効期間情報がありません。")
         return []
 
     try:
-        # valid_time ではなく start_time/end_time を使用
         start = parse_iso(taf["start_time"].get("dt"))
         end = parse_iso(taf["end_time"].get("dt"))
-    except Exception as e:
-        print(f"Error Parsing time for {station_name}: {e}")
+    except:
         return []
     
     if not start or not end:
@@ -99,20 +106,16 @@ def expand_taf_hourly(station_name, taf):
 
     while t <= end:
         target_forecast = None
-        # 各時刻において、最適な予報セグメント(forecastの中身)を検索
         for e in taf.get("forecast", []):
             e_start_str = e.get("start_time", {}).get("dt")
             e_end_str = e.get("end_time", {}).get("dt")
-            
-            if not e_start_str:
-                continue
+            if not e_start_str: continue
             
             e_start = parse_iso(e_start_str)
             e_end = parse_iso(e_end_str) if e_end_str else end
 
             if e_start <= t <= e_end:
                 target_forecast = e
-                # BECMGなどの後続の変化を拾うため最後まで回す
 
         if target_forecast:
             rows.append(make_taf_row(station_name, t, target_forecast))
@@ -144,13 +147,13 @@ def make_taf_row(station_name, t, e):
         "変化の種類": e.get("type"),
         "風情報": wind,
         "視程": val(e.get("visibility")),
-        "天気": " ".join(e.get("wx_codes", []) if e.get("wx_codes") else []),
+        "天気": safe_join_wx(e.get("wx_codes")),
         "雲の状態": " ".join(f"{c['type']}{c.get('altitude','')}" for c in e.get("clouds", [])) if e.get("clouds") else "",
         "原文セグメント": raw
     }
 
 # =========================
-# CSV出力
+# CSV出力・メイン
 # =========================
 def write_csv(path, rows, fields):
     if not rows: return
@@ -160,15 +163,11 @@ def write_csv(path, rows, fields):
         if write_header: writer.writeheader()
         writer.writerows(rows)
 
-# =========================
-# メイン処理
-# =========================
 def main():
     for name, icao in AIRPORTS.items():
         base = f"data/{name}"
         ensure_dir(base)
 
-        # METAR
         try:
             m = get_metar(icao)
             row = parse_metar(m, name)
@@ -177,7 +176,6 @@ def main():
         except Exception as e:
             print(f"METARエラー ({name}/{icao}):", e)
 
-        # TAF
         try:
             taf_data = get_taf(icao)
             rows = expand_taf_hourly(name, taf_data)
