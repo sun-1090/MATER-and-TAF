@@ -79,6 +79,9 @@ def get_taf(icao):
 
 def expand_taf_hourly(station_name, taf):
     """予報期間を1時間ごとの行に展開する"""
+    if not taf or "valid_name" not in taf:
+        print(f"warling!:{station_name}のなかにvalid_nameがありません！")
+        return []
     start = datetime.fromisoformat(taf["valid_time"]["from"])
     end = datetime.fromisoformat(taf["valid_time"]["to"])
 
